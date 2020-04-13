@@ -20,30 +20,30 @@ This increases the privacy and security of your JoinMarket wallet while still ma
 - You must choose a label color, but it does not have to match this example.
 - It is safe to lower the `maxmem` and `vcpus` on this VM.
 
-```
+```console
 [user@dom0 ~]$ qvm-create --label black --prop maxmem='800' --prop netvm='' \
 --prop vcpus='1' --template whonix-ws-15-bitcoin joinmarket
 ```
 ### B. Allow comms from `joinmarket` to `bitcoind` VM.
-```
+```console
 [user@dom0 ~]$ echo 'joinmarket bitcoind allow' | sudo tee -a /etc/qubes-rpc/policy/qubes.ConnectTCP
 ```
 ## II. Set Up TemplateVM
 ### A. In a `whonix-ws-15-bitcoin` terminal, update and install dependencies.
-```
+```console
 user@host:~$ sudo apt update && sudo apt install -y libffi-dev libgmp-dev libsecp256k1-dev \
 python-configparser python-virtualenv python3-argon2 python3-cffi python3-dev python3-future \
 python3-libnacl python3-matplotlib python3-mnemonic python3-pip python3-pyaes python3-qrcode
 ```
 ### B. Create system user.
-```
+```console
 user@host:~$ sudo adduser --system joinmarket
 Adding system user `joinmarket' (UID 117) ...
 Adding new user `joinmarket' (UID 117) with group `nogroup' ...
 Creating home directory `/home/joinmarket' ...
 ```
 ### C. Shutdown TemplateVM.
-```
+```console
 user@host:~$ sudo poweroff
 ```
 ## III. Install JoinMarket
@@ -52,7 +52,7 @@ user@host:~$ sudo poweroff
 
 **Note:** At the time of writing the current JoinMarket [release](https://github.com/JoinMarket-Org/joinmarket-clientserver/releases) is `v0.6.1`, modify the following steps accordingly if the version has changed.
 
-```
+```console
 user@host:~$ git clone --branch v0.6.1 \
 https://github.com/JoinMarket-Org/joinmarket-clientserver ~/joinmarket-clientserver
 Cloning into '/home/user/joinmarket-clientserver'...
@@ -68,7 +68,7 @@ Note: checking out '8fd8e10f772f204170430879f7f3b11b26ba26c5'.
 
 **Note:** You can verify the key fingerprint in the [release notes](https://github.com/JoinMarket-Org/joinmarket-clientserver/releases).
 
-```
+```console
 user@host:~$ gpg --recv-keys "2B6F C204 D9BF 332D 062B 461A 1410 01A1 AF77 F20B"
 gpg: key 0x141001A1AF77F20B: 2 signatures not checked due to missing keys
 gpg: key 0x141001A1AF77F20B: public key "Adam Gibson (CODE SIGNING KEY) <ekaggata@gmail.com>" imported
@@ -80,7 +80,7 @@ gpg:               imported: 1
 
 **Note:** Your output may not match the example. Just check that it says `Good signature`.
 
-```
+```console
 user@host:~$ cd ~/joinmarket-clientserver/
 user@host:~/joinmarket-clientserver$ git verify-tag v0.6.1
 gpg: Signature made Tue 10 Dec 2019 11:54:42 AM UTC
@@ -93,7 +93,7 @@ Primary key fingerprint: 2B6F C204 D9BF 332D 062B  461A 1410 01A1 AF77 F20B
 ### B. Install JoinMarket dependencies.
 1. Create Python virtual environment.
 
-```
+```console
 user@host:~/joinmarket-clientserver$ virtualenv -p python3 ~/joinmarket-clientserver/jmvenv
 Already using interpreter /usr/bin/python3
 Using base prefix '/usr'
@@ -106,7 +106,7 @@ Installing setuptools, pkg_resources, pip, wheel...done.
 
 **Note:** Ignore the `File exists` errors.
 
-```
+```console
 user@host:~/joinmarket-clientserver$ ln -s /usr/lib/python3/dist-packages/* ~/joinmarket-clientserver/jmvenv/lib/python3.7/site-packages/
 ```
 3. Install dependencies to virtual environment.
@@ -115,37 +115,37 @@ user@host:~/joinmarket-clientserver$ ln -s /usr/lib/python3/dist-packages/* ~/jo
 - This step, and the next optional step, will produce a lot of output and take some time. This is normal, be patient.
 - If you have errors re-run the `setupall.py` step a second time.
 
-```
+```console
 user@host:~/joinmarket-clientserver$ source ~/joinmarket-clientserver/jmvenv/bin/activate
 (jmvenv) user@host:~/joinmarket-clientserver$ python ~/joinmarket-clientserver/setupall.py --all
 ```
 4. Upgrade `service-identity` to avoid an annoying warning.
 
-```
+```console
 (jmvenv) user@host:~/joinmarket-clientserver$ pip install service-identity --upgrade
 ```
 #### Optional Step: Install QT dependencies for JoinMarket GUI.
 **Note:** You can safely skip this step if you do not intend to use the JoinMarket GUI.
 
-```
+```console
 (jmvenv) user@host:~/joinmarket-clientserver$ pip install PySide2 \
 https://github.com/sunu/qt5reactor/archive/58410aaead2185e9917ae9cac9c50fe7b70e4a60.zip
 ```
 5. Deactivate virtual environment and make relocatable.
 
-```
+```console
 (jmvenv) user@host:~/joinmarket-clientserver$ deactivate
 user@host:~/joinmarket-clientserver$ virtualenv -p python3 --relocatable ~/joinmarket-clientserver/jmvenv
 ```
 6. Return to home directory.
 
-```
+```console
 user@host:~/joinmarket-clientserver$ cd
 ```
 ### C. Relocate `joinmarket-clientserver/` directory.
 1. Copy `joinmarket-clientserver/` directory to the `joinmarket` user's home directory, change ownership.
 
-```
+```console
 user@host:~$ sudo cp -r ~/joinmarket-clientserver/ /home/joinmarket/
 user@host:~$ sudo chown -R joinmarket:nogroup /home/joinmarket/
 ```
@@ -153,18 +153,18 @@ user@host:~$ sudo chown -R joinmarket:nogroup /home/joinmarket/
 
 **Note:** Select `joinmarket` from the `dom0` pop-up.
 
-```
+```console
 user@host:~$ qvm-copy ~/joinmarket-clientserver/
 ```
 ### D. Start `joinmarketd` service.
-```
+```console
 user@host:~$ sudo systemctl start joinmarketd.service
 ```
 ## IV. Configure `bitcoind` and `joinmarketd`
 ### A. In a `sys-bitcoin` terminal, find out the gateway IP.
 **Note:** Save your gateway IP (`10.137.0.50` in this example) to replace `<gateway-ip>` in later examples.
 
-```
+```console
 user@host:~$ qubesdb-read /qubes-ip
 10.137.0.50
 ```
@@ -173,7 +173,7 @@ user@host:~$ qubesdb-read /qubes-ip
 
 **Note:** Save your username (`uJDzc07zxn5riJDx7N5m` in this example) to replace `<rpc-user>` in later examples.
 
-```
+```console
 user@host:~$ head -c 15 /dev/urandom | base64
 uJDzc07zxn5riJDx7N5m
 ```
@@ -184,7 +184,7 @@ uJDzc07zxn5riJDx7N5m
 - Save your password (`IuziNnTsOUkonsDD3jn5WatPnFrFOMSnGUsRSUaq5Qg=` in this example) to replace `<rpc-pass>` in later examples.
 - Replace `<rpc-user>` with the information noted earlier.
 
-```
+```console
 user@host:~$ ~/bitcoin/share/rpcauth/rpcauth.py <rpc-user>
 String to be appended to bitcoin.conf:
 rpcauth=uJDzc07zxn5riJDx7N5m:838c4dd74606918f1f27a5a2a52b168$9634018b87451bca05082f51b0b5b876fc72ef877bad98298e97e277abd5f90c
@@ -194,7 +194,7 @@ IuziNnTsOUkonsDD3jn5WatPnFrFOMSnGUsRSUaq5Qg=
 ### C. Configure `bitcoind`.
 1. Open `bitcoin.conf`.
 
-```
+```console
 user@host:~$ sudo -u bitcoin mousepad /home/bitcoin/.bitcoin/bitcoin.conf
 ```
 2. Paste the following at the bottom of the file.
@@ -213,13 +213,13 @@ wallet=joinmarket
 4. Switch back to the terminal: `Ctrl-Q`.
 5. Restart the `bitcoind` service.
 
-```
+```console
 user@host:~$ sudo systemctl restart bitcoind.service
 ```
 ### D. Use `systemd` to keep `joinmarketd` running.
 1. Create the service file.
 
-```
+```console
 user@host:~$ lxsu mousepad /rw/config/systemd/joinmarketd.service
 ```
 2. Paste the following.
@@ -249,18 +249,18 @@ WantedBy=multi-user.target
 4. Switch back to the terminal: `Ctrl-Q`.
 5. Fix permissions.
 
-```
+```console
 user@host:~$ chmod 0600 /rw/config/systemd/joinmarketd.service
 ```
 ### E. Enable the service on boot.
 1. Edit the file `/rw/config/rc.local`.
 
-```
+```console
 user@host:~$ lxsu mousepad /rw/config/rc.local
 ```
 2. Paste the following at the bottom of the file.
 
-```
+```console
 cp /rw/config/systemd/joinmarketd.service /lib/systemd/system/
 systemctl daemon-reload
 systemctl start joinmarketd.service
@@ -271,12 +271,12 @@ systemctl start joinmarketd.service
 ### A. In a `joinmarket` terminal, open communication ports on boot.
 1. Edit the file `/rw/config/rc.local`.
 
-```
+```console
 user@host:~$ lxsu mousepad /rw/config/rc.local
 ```
 2. Paste the following at the bottom of the file.
 
-```
+```console
 qvm-connect-tcp 8332:bitcoind:8332
 qvm-connect-tcp 27183:bitcoind:27183
 qvm-connect-tcp 27184:bitcoind:27184
@@ -285,29 +285,29 @@ qvm-connect-tcp 27184:bitcoind:27184
 4. Switch back to the terminal: `Ctrl-Q`.
 5. Execute the file.
 
-```
+```console
 user@host:~$ sudo /rw/config/rc.local
 ```
 ### B. Move copied JoinMarket directory to your home directory.
-```
+```console
 user@host:~$ mv ~/QubesIncoming/bitcoind/joinmarket-clientserver/ ~
 ```
 ### C. In a `joinmarket` terminal, configure JoinMarket.
 1. Source the virtual environment and change to the JoinMarket `scripts/` directory.
 
-```
+```console
 user@host:~$ source ~/joinmarket-clientserver/jmvenv/bin/activate
 (jmvenv) user@host:~$ cd ~/joinmarket-clientserver/scripts/
 ```
 2. Generate a configuration file.
 
-```
+```console
 (jmvenv) user@host:~/joinmarket-clientserver/scripts$ python wallet-tool.py
 Created a new `joinmarket.cfg`. Please review and adopt the settings and restart joinmarket.
 ```
 3. Make a backup and edit the file `joinmarket.cfg`.
 
-```
+```console
 (jmvenv) user@host:~/joinmarket-clientserver/scripts$ cp joinmarket.cfg joinmarket.cfg.orig
 (jmvenv) user@host:~/joinmarket-clientserver/scripts$ echo > joinmarket.cfg
 (jmvenv) user@host:~/joinmarket-clientserver/scripts$ mousepad joinmarket.cfg
@@ -384,12 +384,12 @@ accept_commitment_broadcasts = 1
 ### A. In a `joinmarket` terminal, source virtual envrionment and change to JoinMarket's `scripts/` directory on boot.
 1. Edit the file `~/.bashrc`.
 
-```
+```console
 user@host:~$ mousepad ~/.bashrc
 ```
 2. Paste the following at the bottom of the file.
 
-```
+```console
 source /home/user/joinmarket-clientserver/jmvenv/bin/activate
 cd /home/user/joinmarket-clientserver/scripts/
 ```
@@ -397,6 +397,6 @@ cd /home/user/joinmarket-clientserver/scripts/
 4. Switch back to the terminal: `Ctrl-Q`.
 5. Source the file to take effect.
 
-```
+```console
 user@host:~$ source ~/.bashrc
 ```
